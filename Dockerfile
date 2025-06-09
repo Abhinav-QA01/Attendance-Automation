@@ -42,7 +42,7 @@ WORKDIR /app
 RUN mkdir -p /app/test_files
 
 # Copy test files (place your test files in a 'test_files' folder in your project)
-COPY test_files/ /app/test_files/
+# COPY test_files/ /app/test_files/
 
 # Copy application code
 COPY . .
@@ -53,5 +53,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Start Xvfb and run tests
 CMD Xvfb :99 -screen 0 1920x1080x24 -ac & \
     export DISPLAY=:99 && xdpyinfo -display :99 && \
-    python -m pytest main_driver.py -v
-    
+    python -m pytest test_main_driver.py -v
+    # xvfb-run -a python -m pytest main_driver.py -v
+
+# CMD ["python", "-m", "pytest", "main_driver.py", "-v"]

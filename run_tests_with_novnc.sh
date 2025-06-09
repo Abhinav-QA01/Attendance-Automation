@@ -14,7 +14,7 @@ sleep 5
 
 # Open the noVNC viewer in the default browser with auto-connect parameters
 echo "Opening noVNC viewer in browser with auto-connect..."
-xdg-open "http://localhost:7900/?autoconnect=true&reconnect=true&resize=scale&password=" || open "http://localhost:7900/?autoconnect=true&reconnect=true&resize=scale&password=" || start "http://localhost:7900/?autoconnect=true&reconnect=true&resize=scale&password="
+xdg-open "http://chrome/?autoconnect=true&reconnect=true&resize=scale&password=" || open "http://chrome/?autoconnect=true&reconnect=true&resize=scale&password=" || start "http://chrome/?autoconnect=true&reconnect=true&resize=scale&password="
 
 # Wait for browser to open
 echo "Waiting for browser to open..."

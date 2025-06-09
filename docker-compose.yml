@@ -1,5 +1,5 @@
 
-version: '3.8'
+version: '3.9'
 
 services:
   # Selenium Chrome service with VNC for visual debugging
@@ -16,6 +16,11 @@ services:
       - START_XVFB=true
       - SE_SCREEN_WIDTH=1920
       - SE_SCREEN_HEIGHT=1080
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4444/wd/hub/status"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
     extra_hosts:
       - "host.docker.internal:host-gateway"
     volumes:
@@ -26,10 +31,14 @@ services:
 
   # Test runner service
   selenium-tests:
-    build: .
+    build: 
+      context: .
+      dockerfile: Dockerfile
     container_name: selenium-tests
     depends_on:
-      - chrome
+      chrome:
+        condition: service_healthy
+
     environment:
       - PYTHONUNBUFFERED=1
       - TEST_LANGUAGE=Español
@@ -43,7 +52,7 @@ services:
       - "C:/Users/abhin/Downloads/surveysrs.pdf:/tmp/surveysrs.pdf:ro"
     networks:
       - attendance-management-shared-network
-    command: python -m pytest main_driver.py -v
+    command: xvfb-run -a python -m pytest test_main_driver.py -v
 
 networks:
   attendance-management-shared-network:

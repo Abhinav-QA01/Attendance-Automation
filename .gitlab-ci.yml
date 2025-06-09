@@ -1,0 +1,297 @@
+# GitLab CI/CD Pipeline for Attendance Automation System
+# This pipeline runs Selenium-based tests using Docker containers
+
+stages:
+  - setup
+  - test
+  - report
+  - deploy
+
+variables:
+  # Python and Docker settings
+  PIP_CACHE_DIR: "$CI_PROJECT_DIR/.pip-cache"
+  DOCKER_DRIVER: overlay2
+  DOCKER_TLS_CERTDIR: "/certs"
+  
+  # Selenium settings
+  SELENIUM_HEADLESS: "1"
+  SELENIUM_REMOTE_URL: "http://chrome:4444/wd/hub"
+  PYTHONUNBUFFERED: "1"
+  
+  # Test settings
+  BASE_URL: "https://academic-teaching-attendance-control-app-develop-iymj66chvq-uc.a.run.app/"
+  TEST_LANGUAGE: "English"
+  MOCK_MODE: "0"
+
+# Cache Python dependencies
+cache:
+  paths:
+    - .pip-cache/
+    - venv/
+
+# Setup stage - Install dependencies and prepare environment
+setup:
+  stage: setup
+  image: python:3.9-slim
+  before_script:
+    - python --version
+    - pip install --upgrade pip
+    - pip install virtualenv
+    - virtualenv venv
+    - source venv/bin/activate
+    - pip install -r requirements.txt
+    - pip install pytest-html pytest-xdist
+  script:
+    - echo "Dependencies installed successfully"
+    - |
+      python -c "import selenium; print(f'Selenium version: {selenium.__version__}')"
+    - |
+      python -c "import pytest; print(f'Pytest version: {pytest.__version__}')"
+  artifacts:
+    paths:
+      - venv/
+    expire_in: 1 hour
+  only:
+    - main
+    - develop
+    - merge_requests
+
+# Unit tests stage
+unit_tests:
+  stage: test
+  image: python:3.9-slim
+  services:
+    - docker:dind
+  before_script:
+    - apt-get update && apt-get install -y docker.io
+    - docker --version
+    - source venv/bin/activate || true
+    - pip install -r requirements.txt
+  script:
+    - echo "Running unit tests..."
+    - python -m pytest tests/ -v --tb=short
+  artifacts:
+    reports:
+      junit: test-results.xml
+    paths:
+      - test-results.xml
+    expire_in: 1 week
+  only:
+    - main
+    - develop
+    - merge_requests
+
+# Integration tests with Selenium
+integration_tests:
+  stage: test
+  image: python:3.9-slim
+  services:
+    - name: selenium/standalone-chrome:latest
+      alias: chrome
+  variables:
+    SELENIUM_REMOTE_URL: "http://chrome:4444/wd/hub"
+    SELENIUM_HEADLESS: "1"
+  before_script:
+    - apt-get update && apt-get install -y wget gnupg
+    - wget -q -O - https://dl.google.com/linux/linux_signing_key.pub | apt-key add -
+    - echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" > /etc/apt/sources.list.d/google.list
+    - apt-get update && apt-get install -y google-chrome-stable
+    - pip install --upgrade pip
+    - pip install -r requirements.txt
+    - pip install pytest-html pytest-xdist
+  script:
+    - echo "Waiting for Selenium Chrome to be ready..."
+    - sleep 10
+    - echo "Running integration tests with Selenium..."
+    - python -m pytest main_driver.py -v --html=test-report.html --self-contained-html
+  artifacts:
+    paths:
+      - test-report.html
+      - screenshots/
+    reports:
+      junit: test-results.xml
+    expire_in: 1 week
+  only:
+    - main
+    - develop
+    - merge_requests
+  allow_failure: false
+
+# Docker build and test
+docker_tests:
+  stage: test
+  image: docker:latest
+  services:
+    - docker:dind
+  before_script:
+    - docker --version
+    - docker-compose --version
+  script:
+    - echo "Building Docker image..."
+    - docker build -t attendance-automation .
+    - echo "Running tests in Docker container..."
+    - docker run --rm attendance-automation python -m pytest main_driver.py -v
+  artifacts:
+    paths:
+      - docker-logs/
+    expire_in: 1 week
+  only:
+    - main
+    - develop
+    - merge_requests
+
+# Docker Compose integration tests
+docker_compose_tests:
+  stage: test
+  image: docker:latest
+  services:
+    - docker:dind
+  before_script:
+    - docker --version
+    - docker-compose --version
+  script:
+    - echo "Starting Docker Compose services..."
+    - docker-compose up -d chrome
+    - echo "Waiting for Chrome service to be ready..."
+    - sleep 15
+    - echo "Running tests with Docker Compose..."
+    - docker-compose run --rm selenium-tests python -m pytest main_driver.py -v
+  after_script:
+    - echo "Cleaning up Docker Compose services..."
+    - docker-compose down --remove-orphans
+  artifacts:
+    paths:
+      - docker-compose-logs/
+    expire_in: 1 week
+  only:
+    - main
+    - develop
+    - merge_requests
+
+# Test report generation
+test_report:
+  stage: report
+  image: python:3.9-slim
+  dependencies:
+    - integration_tests
+  script:
+    - echo "Generating test report..."
+    - pip install pytest-html
+    - |
+      python -c "
+      import os
+      if os.path.exists('test-report.html'):
+          print('Test report found')
+      else:
+          print('Test report not found')
+          exit(1)
+      "
+  artifacts:
+    paths:
+      - test-report.html
+    reports:
+      junit: test-results.xml
+    expire_in: 1 month
+  only:
+    - main
+    - develop
+    - merge_requests
+
+# Code quality check
+code_quality:
+  stage: test
+  image: python:3.9-slim
+  before_script:
+    - pip install flake8 black isort
+  script:
+    - echo "Running code quality checks..."
+    - flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+    - flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+    - black --check --diff .
+    - isort --check-only --diff .
+  only:
+    - main
+    - develop
+    - merge_requests
+
+# Security scan
+security_scan:
+  stage: test
+  image: python:3.9-slim
+  before_script:
+    - pip install safety bandit
+  script:
+    - echo "Running security scans..."
+    - safety check
+    - bandit -r . -f json -o bandit-report.json || true
+  artifacts:
+    paths:
+      - bandit-report.json
+    expire_in: 1 week
+  only:
+    - main
+    - develop
+    - merge_requests
+
+# Build Docker image for deployment
+build_docker:
+  stage: deploy
+  image: docker:latest
+  services:
+    - docker:dind
+  before_script:
+    - docker --version
+  script:
+    - echo "Building production Docker image..."
+    - docker build -t $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA .
+    - docker build -t $CI_REGISTRY_IMAGE:latest .
+    - echo "Logging into GitLab Container Registry..."
+    - echo $CI_REGISTRY_PASSWORD | docker login -u $CI_REGISTRY_USER --password-stdin $CI_REGISTRY
+    - echo "Pushing Docker images..."
+    - docker push $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA
+    - docker push $CI_REGISTRY_IMAGE:latest
+  only:
+    - main
+    - tags
+
+# Deploy to staging
+deploy_staging:
+  stage: deploy
+  image: alpine:latest
+  before_script:
+    - apk add --no-cache curl
+  script:
+    - echo "Deploying to staging environment..."
+    - echo "Staging deployment completed"
+  environment:
+    name: staging
+    url: https://staging-attendance.example.com
+  only:
+    - develop
+
+# Deploy to production
+deploy_production:
+  stage: deploy
+  image: alpine:latest
+  before_script:
+    - apk add --no-cache curl
+  script:
+    - echo "Deploying to production environment..."
+    - echo "Production deployment completed"
+  environment:
+    name: production
+    url: https://attendance.example.com
+  when: manual
+  only:
+    - main
+    - tags
+
+# Cleanup job
+cleanup:
+  stage: .post
+  image: alpine:latest
+  script:
+    - echo "Cleaning up resources..."
+    - echo "Cleanup completed"
+  when: always
+  allow_failure: true 

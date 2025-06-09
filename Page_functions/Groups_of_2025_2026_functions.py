@@ -12,7 +12,6 @@ from selenium.common.exceptions import NoSuchElementException
 # r.init()
 import pyautogui
 
-
 class Group_2025_2026_Function(Group_2025_2026):
     def navigate_to_table(self):
 
@@ -96,11 +95,14 @@ class Group_2025_2026_Function(Group_2025_2026):
                                 file_uploader_button = self.driver.find_element(*self.file_uploader_element)
                                 file_uploader_button.click()
                                 time.sleep(2)
-
-                                # pyautogui.write('"C:\\Users\\abhin\\Downloads\\just_s2s6_TYE027_1843560972_20250402 (1).docx"')
+                                # full_path = ('/tmp/surveysrs.pdf')
+                                # file_input = WebDriverWait(self.driver, 10).until(
+                                #     EC.presence_of_element_located((By.CSS_SELECTOR, ))
+                                # )
+                                # file_uploader_button.send_keys(full_path)
                                 pyautogui.write('/tmp/surveysrs.pdf')
-
                                 pyautogui.press('enter')
+
                                 time.sleep(2)
 
                                 file_upload_confirm_button = self.driver.find_element(*self.file_upload_confirm_button)
