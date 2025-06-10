@@ -9,8 +9,8 @@ class Config:
     
     # Application Configuration
     BASE_URL = os.environ.get('BASE_URL', 'https://academic-teaching-attendance-control-app-develop-iymj66chvq-uc.a.run.app/')
-    USERNAME = os.environ.get('USERNAME', 'abhinav.1154@zenmonk.tech')
-    PASSWORD = os.environ.get('PASSWORD', 'Abhi@123zenmonk')
+    USERNAME = os.environ.get('USERNAME')
+    PASSWORD = os.environ.get('PASSWORD')
     LANGUAGE_SELECTED = int(os.environ.get('LANGUAGE_SELECTED', '1'))  # 0-Spanish, 1-English
     
     # Selenium Configuration
@@ -37,8 +37,8 @@ class Config:
         """Print current configuration (without sensitive data)"""
         print("Current Configuration:")
         print(f"  BASE_URL: {cls.BASE_URL}")
-        print(f"  USERNAME: {cls.USERNAME[:10]}..." if len(cls.USERNAME) > 10 else f"  USERNAME: {cls.USERNAME}")
-        print(f"  PASSWORD: {'*' * len(cls.PASSWORD)}")
+        print(f"  USERNAME: {cls.USERNAME[:10]}..." if cls.USERNAME and len(cls.USERNAME) > 10 else f"  USERNAME: {cls.USERNAME}")
+        print(f"  PASSWORD: {'*' * len(cls.PASSWORD) if cls.PASSWORD else 'Not set'}")
         print(f"  LANGUAGE_SELECTED: {cls.LANGUAGE_SELECTED}")
         print(f"  SELENIUM_REMOTE_URL: {cls.SELENIUM_REMOTE_URL}")
         print(f"  SELENIUM_HEADLESS: {cls.SELENIUM_HEADLESS}") 
