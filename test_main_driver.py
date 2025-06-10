@@ -43,13 +43,21 @@ import time
 from Page_functions.login_page_functions import Login_Page
 from Process.login_process import Login_Process
 from Import_libraries import DriverManager
-import user_details
+from config import Config
 from Process.Groups_of_2025_2026_process import Group_Navigation_Process
 from webdriver_manager.chrome import ChromeDriverManager
 from Page_functions.Groups_of_2025_2026_functions import Group_2025_2026_Function
 
+# Validate configuration before starting tests
+try:
+    Config.validate_config()
+    Config.print_config()
+except ValueError as e:
+    print(f"Configuration Error: {e}")
+    exit(1)
+
 driver = DriverManager.get_driver()
-driver.get(user_details.url)
+driver.get(Config.BASE_URL)
 driver.maximize_window()
 time.sleep(4)
 
@@ -58,7 +66,7 @@ group_2025_2026_function = Group_2025_2026_Function(driver, x=None, y=None)
 
 def test_login_process():
     login_process = Login_Process(login_page_functions)
-    login_process.run_process(user_details.username, user_details.password, user_details.language_selected)
+    login_process.run_process(Config.USERNAME, Config.PASSWORD, Config.LANGUAGE_SELECTED)
 
 def test_group_of_2025_2026_process():
     group_navigation_2025_2026_process = Group_Navigation_Process(group_2025_2026_function)

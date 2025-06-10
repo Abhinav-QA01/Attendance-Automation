@@ -52,7 +52,7 @@ services:
       - "C:/Users/abhin/Downloads/surveysrs.pdf:/tmp/surveysrs.pdf:ro"
     networks:
       - attendance-management-shared-network
-    command: xvfb-run -a python -m pytest test_main_driver.py -v
+    command: python -m pytest test_main_driver.py -v
 
 networks:
   attendance-management-shared-network:

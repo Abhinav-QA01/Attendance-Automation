@@ -1,6 +1,7 @@
 import os
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
+from config import Config
 
 class DriverManager:
     _driver = None
@@ -9,17 +10,16 @@ class DriverManager:
     @classmethod
     def get_driver(cls):
         if cls._driver is None:
-            # Use the Selenium server URL from the environment variable
-            remote_url = os.environ.get('SELENIUM_REMOTE_URL', 'http://localhost:4444/wd/hub')
+            # Use the Selenium server URL from the configuration
+            remote_url = Config.SELENIUM_REMOTE_URL
             print(f"Using remote Selenium server at {remote_url}")
 
             # Configure Chrome options
             options = Options()
             options.add_argument('--no-sandbox')
             options.add_argument('--disable-dev-shm-usage')
-            # Only add headless if SELENIUM_HEADLESS is set to 1/true
-            headless = os.environ.get('SELENIUM_HEADLESS', '0').lower() in ['1', 'true', 'yes']
-            if headless:
+            # Only add headless if configured
+            if Config.SELENIUM_HEADLESS:
                 options.add_argument('--headless')
                 options.add_argument('--disable-gpu')
 

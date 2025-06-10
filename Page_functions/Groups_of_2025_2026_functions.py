@@ -7,10 +7,6 @@ import time
 from Page_Object.Groups_of_2025_2026_page import Group_2025_2026
 from selenium.webdriver.common.by import By
 from selenium.common.exceptions import NoSuchElementException
-# import tagui as t
-# import rpa as r
-# r.init()
-import pyautogui
 
 class Group_2025_2026_Function(Group_2025_2026):
     def navigate_to_table(self):
@@ -92,16 +88,16 @@ class Group_2025_2026_Function(Group_2025_2026):
                                 justify_late_button = self.driver.find_element(*self.justify_late_button)
                                 justify_late_button.click()
 
-                                file_uploader_button = self.driver.find_element(*self.file_uploader_element)
-                                file_uploader_button.click()
+                                # file_uploader_button = self.driver.find_element(*self.file_uploader_element)
+                                # file_uploader_button.click()
                                 time.sleep(2)
-                                # full_path = ('/tmp/surveysrs.pdf')
-                                # file_input = WebDriverWait(self.driver, 10).until(
-                                #     EC.presence_of_element_located((By.CSS_SELECTOR, ))
-                                # )
-                                # file_uploader_button.send_keys(full_path)
-                                pyautogui.write('/tmp/surveysrs.pdf')
-                                pyautogui.press('enter')
+                                full_path = ('/tmp/surveysrs.pdf')
+                                file_input = WebDriverWait(self.driver, 10).until(
+                                    EC.presence_of_element_located((By.CSS_SELECTOR, '[data-test-id="input-justification-file"]'))
+                                )
+                                file_input.send_keys(full_path)
+                                # pyautogui.write('/tmp/surveysrs.pdf')
+                                # pyautogui.press('enter')
 
                                 time.sleep(2)
 
